@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import yaml
+from yaml.loader import SafeLoader
 from tqdm import tqdm
 
 from models.experimental import attempt_load
@@ -16,7 +17,10 @@ from utils.general import (
     coco80_to_coco91_class, check_file, check_img_size, compute_loss, non_max_suppression,
     scale_coords, xyxy2xywh, clip_coords, plot_images, xywh2xyxy, box_iou, output_to_target, ap_per_class)
 from utils.torch_utils import select_device, time_synchronized
-from config import opt
+# from config import opt
+with open('params.yaml') as f:
+    opt = yaml.load(f, SafeLoader)
+
 
 def test(data,
          weights=None,
@@ -39,8 +43,8 @@ def test(data,
         device = next(model.parameters()).device  # get model device
 
     else:  # called directly
-        device = select_device(opt.device, batch_size=batch_size)
-        merge, save_txt = opt.merge, opt.save_txt  # use Merge NMS, save *.txt labels
+        device = select_device(opt['device'], batch_size=batch_size)
+        merge, save_txt = opt['merge'], opt['save_txt']  # use Merge NMS, save *.txt labels
         if save_txt:
             out = Path('inference/output')
             if os.path.exists(out):
@@ -72,7 +76,7 @@ def test(data,
     if not training:
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-        path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
+        path = data['test'] if opt['task'] == 'test' else data['val']  # path to val/test images
         dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt,
                                        hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
@@ -246,30 +250,29 @@ def test(data,
 
 if __name__ == '__main__':
     
-    opt.save_json |= opt.data.endswith('coco.yaml')
-    opt.data = check_file(opt.data)  # check file
-    print(opt)
+    opt['save_json'] |= opt['data'].endswith('coco.yaml')
+    opt['data'] = check_file(opt['data'])  # check file
 
-    if opt.task in ['val', 'test']:  # run normally
-        test(opt.data,
-             opt.weights,
-             opt.batch_size,
-             opt.img_size_test,
-             opt.conf_thres_test,
-             opt.iou_thres_test,
-             opt.save_json,
-             opt.single_cls,
-             opt.augment,
-             opt.verbose)
+    if opt['task'] in ['val', 'test']:  # run normally
+        test(opt['data'],
+             opt['weights'],
+             opt['batch_size'],
+             opt['img_size_test'],
+             opt['conf_thres_test'],
+             opt['iou_thres_test'],
+             opt['save_json'],
+             opt['single_cls'],
+             opt['augment'],
+             opt['verbose'])
 
-    elif opt.task == 'study':  # run over a range of settings and save/plot
+    elif opt['task'] == 'study':  # run over a range of settings and save/plot
         for weights in ['']:
-            f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
+            f = 'study_%s_%s.txt' % (Path(opt['data']).stem, Path(weights).stem)  # filename to save to
             x = list(range(352, 832, 64))  # x axis
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
-                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres_test, opt.iou_thres_test, opt.save_json)
+                r, _, t = test(opt['data'], weights, opt['batch_size'], i, opt['conf_thres_test'], opt['iou_thres_test'], opt['save_json'])
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
