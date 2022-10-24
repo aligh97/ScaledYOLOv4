@@ -10,7 +10,12 @@ from models.experimental import MixConv2d, CrossConv, C3
 from utils.general import check_anchor_order, make_divisible, check_file
 from utils.torch_utils import (
     time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
-from config import opt
+# from config import opt
+import yaml
+from yaml.loader import SafeLoader
+
+with open('params.yaml') as f:
+    opt = yaml.load(f, SafeLoader)
 
 class Detect(nn.Module):
     def __init__(self, nc=80, anchors=(), ch=()):  # detection layer
@@ -238,11 +243,11 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 
 if __name__ == '__main__':
-    opt.cfg = check_file(opt.cfg)  # check file
-    device = select_device(opt.device)
+    opt['cfg'] = check_file(opt['cfg'])  # check file
+    device = select_device(opt['device'])
 
     # Create model
-    model = Model(opt.cfg).to(device)
+    model = Model(opt['cfg']).to(device)
     model.train()
 
     # Profile
@@ -251,7 +256,7 @@ if __name__ == '__main__':
 
     # ONNX export
     # model.model[-1].export = True
-    # torch.onnx.export(model, img, opt.cfg.replace('.yaml', '.onnx'), verbose=True, opset_version=11)
+    # torch.onnx.export(model, img, opt['cfg'].replace('.yaml', '.onnx'), verbose=True, opset_version=11)
 
     # Tensorboard
     # from torch.utils.tensorboard import SummaryWriter

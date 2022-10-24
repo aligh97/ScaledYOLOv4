@@ -1,18 +1,23 @@
 import torch
 
 from utils.google_utils import attempt_download
-from config import opt
+# from config import opt
+import yaml
+from yaml.loader import SafeLoader
+
+with open('params.yaml') as f:
+    opt = yaml.load(f, SafeLoader)
 
 if __name__ == '__main__':
 
-    opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
+    opt['img_size'] *= 2 if len(opt['img_size']) == 1 else 1  # expand
 
     # Input
-    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
+    img = torch.zeros((opt['batch_size'], 3, *opt['img_size']))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    attempt_download(opt.weights)
-    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
+    attempt_download(opt['weights'])
+    model = torch.load(opt['weights'], map_location=torch.device('cpu'))['model'].float()
     model.eval()
     model.model[-1].export = True  # set Detect() layer export=True
     y = model(img)  # dry run
@@ -20,7 +25,7 @@ if __name__ == '__main__':
     # TorchScript export
     try:
         print('\nStarting TorchScript export with torch %s...' % torch.__version__)
-        f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
+        f = opt['weights'].replace('.pt', '.torchscript.pt')  # filename
         ts = torch.jit.trace(model, img)
         ts.save(f)
         print('TorchScript export success, saved as %s' % f)
@@ -32,7 +37,7 @@ if __name__ == '__main__':
         import onnx
 
         print('\nStarting ONNX export with onnx %s...' % onnx.__version__)
-        f = opt.weights.replace('.pt', '.onnx')  # filename
+        f = opt['weights'].replace('.pt', '.onnx')  # filename
         model.fuse()  # only for ONNX
         torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                           output_names=['classes', 'boxes'] if y is None else ['output'])
@@ -52,7 +57,7 @@ if __name__ == '__main__':
         print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
         # convert model from torchscript and apply pixel scaling as per detect.py
         model = ct.convert(ts, inputs=[ct.ImageType(name='images', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
-        f = opt.weights.replace('.pt', '.mlmodel')  # filename
+        f = opt['weights'].replace('.pt', '.mlmodel')  # filename
         model.save(f)
         print('CoreML export success, saved as %s' % f)
     except Exception as e:

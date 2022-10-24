@@ -15,15 +15,20 @@ from preprocess.datasets import LoadStreams, LoadImages
 from utils.general import (
     check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, plot_one_box, strip_optimizer)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
-from config import opt
+# from config import opt
+import yaml
+from yaml.loader import SafeLoader
+
+with open('params.yaml') as f:
+    opt = yaml.load(f, SafeLoader)
 
 def detect(save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
-        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size_inference
+        opt['output'], opt['source'], opt['weights'], opt['view_img'], opt['save_txt'], opt['img_size_inference']
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
-    device = select_device(opt.device)
+    device = select_device(opt['device'])
     if os.path.exists(out):
         shutil.rmtree(out)  # delete output folder
     os.makedirs(out)  # make new output folder
@@ -69,10 +74,10 @@ def detect(save_img=False):
 
         # Inference
         t1 = time_synchronized()
-        pred = model(img, augment=opt.augment)[0]
+        pred = model(img, augment=opt['augment'])[0]
 
         # Apply NMS
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+        pred = non_max_suppression(pred, opt['conf_thres'], opt['iou_thres'], classes=opt['classes'], agnostic=opt['agnostic_nms'])
         t2 = time_synchronized()
 
         # Apply Classifier
@@ -138,7 +143,7 @@ def detect(save_img=False):
 
     if save_txt or save_img:
         print('Results saved to %s' % Path(out))
-        if platform == 'darwin' and not opt.update:  # MacOS
+        if platform == 'darwin' and not opt['update']:  # MacOS
             os.system('open ' + save_path)
 
     print('Done. (%.3fs)' % (time.time() - t0))
@@ -147,9 +152,9 @@ def detect(save_img=False):
 if __name__ == '__main__':
 
     with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['']:
+        if opt['update']:  # update all models (to fix SourceChangeWarning)
+            for opt['weights'] in ['']:
                 detect()
-                strip_optimizer(opt.weights)
+                strip_optimizer(opt['weights'])
         else:
             detect()

@@ -13,8 +13,15 @@ import torch
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
+import yaml
+from yaml.loader import SafeLoader
 
 from utils.general import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
+
+
+with open('params.yaml') as f:
+    opt = yaml.load(f, SafeLoader)
+
 
 help_url = ''
 img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.dng']
@@ -55,7 +62,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
                                       cache_images=cache,
-                                      single_cls=opt.single_cls,
+                                      single_cls=opt['single_cls'],
                                       stride=int(stride),
                                       pad=pad)
 
