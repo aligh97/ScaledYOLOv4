@@ -42,7 +42,7 @@ def train(hyp, opt, device, tb_writer=None):
     with open(log_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
     with open(log_dir / 'opt.yaml', 'w') as f:
-        yaml.dump(vars(opt), f, sort_keys=False)
+        yaml.dump(dir(opt), f, sort_keys=False)
 
     # Configure
     cuda = device.type != 'cpu'
