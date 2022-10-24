@@ -13,14 +13,9 @@ import torch
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import yaml
-from yaml.loader import SafeLoader
 
 from utils.general import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
 
-
-with open('params.yaml') as f:
-    opt = yaml.load(f, SafeLoader)
 
 
 help_url = ''

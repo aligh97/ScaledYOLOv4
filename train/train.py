@@ -1,5 +1,3 @@
-import argparse
-import imp
 import math
 import os
 import random
@@ -14,7 +12,6 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-from yaml.loader import SafeLoader
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
@@ -28,8 +25,6 @@ from utils.general import (
 from utils.google_utils import attempt_download
 from utils.torch_utils import init_seeds, ModelEMA, intersect_dicts
 
-with open('params.yaml') as f:
-    opt = yaml.load(f, SafeLoader)
 
 def train(hyp, opt, device, tb_writer=None):
     print(f'Hyperparameters {hyp}')
